@@ -1,0 +1,34 @@
+# Pinned for Google Colab free-tier (T4, CUDA 12.x) and local CPU smoke-testing.
+# Install with: pip install -r requirements.txt
+# On Colab, torch/torchvision are usually preinstalled — only run the torch
+# line below if you need a specific version or are running outside Colab.
+
+# torch/torchvision: Colab's free-tier T4 runtime ships a working,
+# CUDA-matched torch/torchvision preinstalled. Do NOT force-reinstall
+# a specific pin here — mismatched torch/torchvision version pairs
+# (or reinstalling over a CUDA-linked build with a CPU-only wheel)
+# is the #1 cause of "pip install -r requirements.txt" breaking on
+# Colab. If you're NOT on Colab and need to install from scratch,
+# uncomment and adjust for your CUDA version:
+# torch>=2.4
+# torchvision>=0.19
+
+numpy>=1.26,<3
+pillow>=10.0
+opencv-contrib-python>=4.9,<5
+scikit-image>=0.22
+scikit-learn>=1.4
+matplotlib>=3.8
+pyyaml>=6.0
+tqdm>=4.66
+
+# segmentation model zoo (used if model.name == "segformer_b0" in config.yaml)
+transformers>=4.42
+segmentation-models-pytorch>=0.3.3
+
+# ONNX export + quantization + CPU inference benchmarking
+onnx>=1.16
+onnxruntime>=1.18
+
+# experiment logging (optional — scripts must run with this absent/disabled)
+wandb>=0.17

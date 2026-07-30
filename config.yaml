@@ -1,0 +1,125 @@
+# =============================================================
+# MOMUS — Document Forgery Detection & Localization
+# Central configuration. No script should hardcode values that
+# live here — always read through utils.common.load_config().
+# =============================================================
+
+project:
+  name: momus
+  seed: 1337
+
+# ---------------------------------------------------------------
+# Data
+# ---------------------------------------------------------------
+data:
+  root_dir: "data/raw"                 # where downloaded/raw datasets land
+  clean_dir: "data/clean"               # clean (untampered) document images
+  forged_dir: "data/forged"             # generated (image, mask) forgery pairs
+  splits_dir: "data/splits"             # train/val/test split json files
+  image_size: 256                       # all images resized to NxN for training
+  val_fraction: 0.15
+  test_fraction: 0.15
+
+  # Toggle: if real dataset download fails or --synthetic is passed,
+  # fall back to the offline synthetic document generator so the
+  # pipeline NEVER hard-depends on internet access at run time.
+  use_synthetic_fallback: true
+  synthetic_doc_count: 120              # clean synthetic docs to generate for smoke test
+
+  datasets:
+    midv500:
+      url: "ftp://smartengines.com/midv-500/dataset/"
+      info_url: "http://l3i-share.univ-lr.fr/MIDV2020/midv2020.html"
+      license: "CC BY 4.0 (research use) — see MIDV-500/2020 project page"
+    midv2020:
+      url: "https://l3i-share.univ-lr.fr/MIDV2020/midv2020.html"
+      license: "CC BY 4.0 (research use)"
+    sroie:
+      url: "https://rrc.cvc.uab.es/?ch=13"
+      license: "Released for ICDAR 2019 SROIE competition — research use"
+
+# ---------------------------------------------------------------
+# Forgery generation (data/forge.py)
+# ---------------------------------------------------------------
+forgery:
+  types: ["copy_move", "splice", "font_substitution", "inpaint_removal"]
+  # how many forged samples to generate per clean image
+  variants_per_image: 2
+  copy_move:
+    min_patch_frac: 0.06   # patch area as fraction of image area (min)
+    max_patch_frac: 0.16
+  splice:
+    min_patch_frac: 0.05
+    max_patch_frac: 0.15
+  font_substitution:
+    font_path: null        # null = use PIL default font; set a .ttf path to use a specific free font
+    font_size_frac: 0.05    # font height as fraction of image height
+  inpaint_removal:
+    method: "telea"         # telea | ns  (OpenCV inpainting algorithms)
+    inpaint_radius: 5
+
+  # held-out manipulation type for cross-manipulation generalization eval
+  # (trained on the complement set, tested zero-shot on this one)
+  holdout_type: "inpaint_removal"
+
+# ---------------------------------------------------------------
+# Degradation (data/degrade.py) — applied to mimic phone photos
+# and used again at eval-time for the robustness sweep
+# ---------------------------------------------------------------
+degradation:
+  train_time:
+    jpeg_quality_range: [40, 95]
+    downscale_range: [0.7, 1.0]
+    gaussian_blur_prob: 0.3
+    gaussian_blur_sigma_range: [0.3, 1.2]
+  eval_sweep:
+    jpeg_qualities: [30, 50, 70, 90]
+    downscale_factors: [1.0, 0.75, 0.5, 0.35]
+    moiré_strengths: [0.0, 0.15, 0.3, 0.5]   # 0.0 = no moiré overlay
+
+# ---------------------------------------------------------------
+# Model (model/architecture.py)
+# ---------------------------------------------------------------
+model:
+  name: "dual_stream_unet"       # dual_stream_unet | segformer_b0
+  in_channels_rgb: 3
+  in_channels_srm: 3             # SRM residual stream is computed as 3-channel
+  base_channels: 32
+  depth: 4
+  srm_fusion_point: "encoder_input"  # concat SRM branch features before decoder
+
+# ---------------------------------------------------------------
+# Training (model/train.py)
+# ---------------------------------------------------------------
+train:
+  batch_size: 8
+  epochs: 30
+  smoke_test_epochs: 1           # used by run_all.sh for the fast end-to-end check
+  lr: 3.0e-4
+  weight_decay: 1.0e-4
+  optimizer: "adamw"
+  scheduler: "cosine"
+  dice_weight: 0.5
+  bce_weight: 0.5
+  mixed_precision: true          # auto-disabled if no CUDA available
+  num_workers: 0   # 0 is fastest for tiny smoke-test datasets; raise to 2-4 on Colab with full data
+  checkpoint_dir: "checkpoints"
+  resume_from: null               # path to .pt checkpoint to resume from
+  log_every_n_steps: 10
+
+# ---------------------------------------------------------------
+# Evaluation
+# ---------------------------------------------------------------
+eval:
+  threshold: 0.5                  # binarization threshold for predicted mask
+  results_dir: "results"
+  num_failure_examples: 12
+
+# ---------------------------------------------------------------
+# Deploy / export
+# ---------------------------------------------------------------
+deploy:
+  onnx_path: "deploy/artifacts/momus.onnx"
+  onnx_int8_path: "deploy/artifacts/momus_int8.onnx"
+  benchmark_num_images: 100
+  opset_version: 17
