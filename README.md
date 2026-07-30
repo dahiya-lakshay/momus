@@ -67,7 +67,7 @@ flowchart TB
 
 ## Results
 
-> **⚠️ These numbers are from a deliberately tiny smoke-test configuration** (64×64 images, 16 synthetic documents, 1 training epoch, `base_channels: 16, depth: 3`) run on a single-core CPU sandbox with no internet access — they exist to prove the pipeline runs correctly end to end, not to represent real model quality. **Re-run `run_all.sh --full` on a Colab T4 with real MIDV-500/2020 + SROIE data and the full 30-epoch config before drawing any conclusions about actual forgery-detection performance.**
+> ** These numbers are from a deliberately tiny smoke-test configuration** (64×64 images, 16 synthetic documents, 1 training epoch, `base_channels: 16, depth: 3`) run on a single-core CPU sandbox with no internet access — they exist to prove the pipeline runs correctly end to end, not to represent real model quality. **Re-run `run_all.sh --full` on a Colab T4 with real MIDV-500/2020 + SROIE data and the full 30-epoch config before drawing any conclusions about actual forgery-detection performance.**
 
 ### Test-set metrics (smoke-test config)
 
